@@ -1,0 +1,42 @@
+# Archivos de compilación
+bin/
+obj/
+
+# Archivos de usuario
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# Rider / JetBrains
+.idea/
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Paquetes
+*.nupkg
+packages/
+
+# Archivos de publicación
+publish/
+
+# Configuración sensible
+appsettings.Development.json
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Entity Framework
+Migrations/
+
+# Node (por si usas frontend luego)
+node_modules/
