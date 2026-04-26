@@ -1,4 +1,5 @@
 using dotnet_minimal_api_sample.Data;
+using dotnet_minimal_api_sample.Services;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+var ConnectionString = new ConnectionFactory(builder.Configuration.GetConnectionString("SQL"));
+builder.Services.AddSingleton(ConnectionString);
+builder.Services.AddScoped<IServiceProducts, ServiceProduct>();
 
 var app = builder.Build();
 
@@ -17,78 +21,72 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/api/products", () =>
+app.MapGet("/api/products", async (IServiceProducts serviceProducts) =>
 {
-    return Results.Ok(Store.ProductList);
-}
-);
+    List<Product> listProducts = await serviceProducts.GetProducts();
+    return Results.Ok(listProducts);
+});
 
-app.MapGet("/api/product/{code}", (string code) =>
+app.MapGet("/api/product/{code}", async (string code, IServiceProducts serviceProducts) =>
 {
-    return Results.Ok(Store.ProductList.FirstOrDefault(p => p.Code == code));
-}
-);
+    Product product = await serviceProducts.GetProduct(code);
+    if (product is not null)
+    {
+        return Results.Ok(product);
+    }
+    return Results.NotFound("El producto no existe.");
+});
 
-app.MapPost("/api/product", ([FromBody] Product product) =>
+app.MapPost("/api/product", async ([FromBody] Product product, IServiceProducts serviceProducts) =>
 { 
-    if(product.Id < 1 || product.Code == String.Empty)
+    if(product.Code == String.Empty)
     {
-        return Results.BadRequest("El Id debe ser mayor a 0 y el código no puede estar vacío");
+        return Results.BadRequest("El código no puede estar vacío");
     }
-    if(Store.ProductList.Any(p => p.Code.ToLower() == product.Code.ToLower()))
-    {
-        return Results.BadRequest("El código ya existe");
-    }
-    product.Id = Store.ProductList.OrderByDescending(p => p.Id).FirstOrDefault().Id + 1;
-    Store.ProductList.Add(product);
-    return Results.Ok(product);
+    await serviceProducts.CreateProduct(product);
+    return Results.Ok();
 }
 );
 
-app.MapPut("/api/product", ([FromBody] Product product) =>
+app.MapPut("/api/product", async ([FromBody] Product product, IServiceProducts serviceProducts) =>
 {
     if(product.Code == String.Empty)
     {
         return Results.BadRequest("El código no puede ser vacío");
     }
-    Product ExistingProduct = Store.ProductList.FirstOrDefault(p => p.Code == product.Code);
+
+    Product ExistingProduct = await serviceProducts.GetProduct(product.Code);
 
     if(ExistingProduct != null)
     {
-        ExistingProduct.Name = product.Name;
-        ExistingProduct.Description = product.Description;
-        ExistingProduct.Code = product.Code;
-        ExistingProduct.Price = product.Price;
-        ExistingProduct.Stock = product.Stock;
-        ExistingProduct.State = product.State;
-        ExistingProduct.UpdateDate = DateTime.Now;
-        Store.ProductList[Store.ProductList.IndexOf(ExistingProduct)] = ExistingProduct;
-        return Results.Ok(ExistingProduct);
+        product.Id = ExistingProduct.Id;
+        await serviceProducts.UpdateProduct(product);
+        return Results.Ok(product);
     }
     else
     {
-        return Results.BadRequest("Ocurrió un error al actualizar el producto.");
+        return Results.BadRequest("El producto no existe.");
     }
 }
 );
 
-app.MapDelete("/api/product", ([FromBody] String Code) =>
+app.MapDelete("/api/product", async ([FromBody] String Code, IServiceProducts serviceProducts) =>
 {
     if (Code == String.Empty)
     {
         return Results.BadRequest("El código no puede ser vacío");
     }
 
-    Product ExistingProduct = Store.ProductList.Find(p => p.Code == Code);
+    Product ExistingProduct = await serviceProducts.GetProduct(Code);
 
     if (ExistingProduct != null)
     {
-        Store.ProductList.Remove(ExistingProduct);
+        await serviceProducts.DeleteProduct(ExistingProduct.Id);
         return Results.Ok("Producto eliminado correctamente");
     }
     else
     {
-        return Results.NotFound("Ocurrió un error al eliminar el producto.");
+        return Results.NotFound("El producto no existe.");
     }
 }
 );

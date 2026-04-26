@@ -10,7 +10,7 @@
         public int Stock { get; set; }
         public bool State { get; set; }
         public DateTime CreationDate { get; set; }
-        public DateTime UpdateDate { get; set; }
+        public DateTime? UpdateDate { get; set; }
 
     }
 }
