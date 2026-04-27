@@ -1,4 +1,6 @@
-﻿namespace dotnet_minimal_api_sample.Data
+﻿using System;
+
+namespace dotnet_minimal_api_sample.Data
 {
     public class Product
     {
@@ -9,8 +11,12 @@
         public decimal Price { get; set; }
         public int Stock { get; set; }
         public bool State { get; set; }
+        public string CreatedByUserId { get; set; }
         public DateTime CreationDate { get; set; }
+        public string? UpdatedByUserId { get; set; }
         public DateTime? UpdateDate { get; set; }
+        public string? DeletedByUserId { get; set; }
+        public DateTime? DeletedDate { get; set; }
 
-    }
+}
 }

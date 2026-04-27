@@ -3,18 +3,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE dbo.DeleteProduct
-	@Id INT
+	@Code NVARCHAR(50),
+	@DeletedByUserId NVARCHAR(50),
+    @DeletedDate DATETIME2
 AS
 BEGIN
 	SET NOCOUNT ON;
 	-- verificar si existe el producto.
-	IF NOT EXISTS(SELECT * FROM dbo.Products WHERE Id = @Id)
+	IF NOT EXISTS(SELECT * FROM dbo.Products WHERE Code = @Code AND State = 1)
 	BEGIN
 		RAISERROR('No existe un producto con ese código.',16,1);
 		RETURN -1;
 	END
 
-	-- Eliminamos el producto si existe
-	DELETE FROM Products WHERE Id = @Id;
+	-- Actualizamdo el estado del producto si existe
+	UPDATE Products SET State = 0, DeletedDate = @DeletedDate, DeletedByUserId = @DeletedByUserId WHERE Code = @Code AND State = 1;
 END
 GO

@@ -7,7 +7,7 @@ CREATE PROCEDURE dbo.ListProducts
 AS
 BEGIN
 	SET NOCOUNT ON;
-	SELECT Id, Name, Description, Code, Price, Stock
-	FROM dbo.Products WHERE (@Code IS NULL AND State = 1) OR Code = @Code;
+	SELECT Name, Description, Code, Price, Stock
+	FROM dbo.Products WHERE (@Code IS NULL OR Code = @Code) AND State = 1;
 END
 GO

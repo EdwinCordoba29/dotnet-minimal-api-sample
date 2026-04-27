@@ -10,7 +10,8 @@ CREATE PROCEDURE dbo.CreateProduct
 	@Stock INT, 
 	@State BIT, 
 	@CreationDate DATETIME2,
-	@UpdateDate DATETIME2 = NULL
+    @CreatedByUserId NVARCHAR(50) 
+
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -22,7 +23,7 @@ BEGIN
 	END
 
 	-- Insertamos el producto si el código no existe
-	INSERT INTO Products (Name, Code, Description, Price, Stock, State, CreationDate, UpdateDate) VALUES
+	INSERT INTO Products (Name, Code, Description, Price, Stock, State, CreationDate, CreatedByUserId) VALUES
 		(@Name, 
 		@Code, 
 		@Description, 
@@ -30,6 +31,6 @@ BEGIN
 		@Stock, 
 		@State, 
 		@CreationDate,
-		@UpdateDate);
+		@CreatedByUserId);
 END
 GO

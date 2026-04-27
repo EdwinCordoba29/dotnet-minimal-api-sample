@@ -1,5 +1,6 @@
 ﻿using dotnet_minimal_api_sample.Data;
 using Microsoft.Data.SqlClient;
+using System.Collections;
 using System.Data;
 using System.Linq.Expressions;
 
@@ -35,9 +36,9 @@ namespace dotnet_minimal_api_sample.Services
                         command.Parameters.Add("@Code", SqlDbType.NVarChar, 50).Value = product.Code;
                         command.Parameters.Add(new SqlParameter("@Price", SqlDbType.Decimal) { Precision = 18, Scale = 2, Value = product.Price });
                         command.Parameters.Add("@Stock", SqlDbType.Int).Value = product.Stock;
-                        command.Parameters.Add("@State", SqlDbType.Bit).Value = product.State;
+                        command.Parameters.Add("@State", SqlDbType.Bit).Value = 1;
                         command.Parameters.Add("@CreationDate", SqlDbType.DateTime2).Value = DateTime.Now;
-                        command.Parameters.Add("@UpdateDate", SqlDbType.DateTime2).Value = DBNull.Value;
+                        command.Parameters.Add("@CreatedByUserId", SqlDbType.NVarChar, 50).Value = "123";
                         await command.ExecuteNonQueryAsync();
                     }
                 }
@@ -48,7 +49,7 @@ namespace dotnet_minimal_api_sample.Services
             }
         }
 
-        public async Task<List<Product>> GetProducts()
+        public async Task<IEnumerable<Product>> GetProducts()
         {
             using (SqlConnection sqlConnection = connection())
             {
@@ -100,7 +101,6 @@ namespace dotnet_minimal_api_sample.Services
                         {
                             product = new Product
                             {
-                                Id = reader.GetInt32("Id"),
                                 Name = reader.GetString("name"),
                                 Description = reader.GetString("description"),
                                 Code = reader.GetString("code"),
@@ -130,14 +130,14 @@ namespace dotnet_minimal_api_sample.Services
                     {
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.UpdateProduct";
-                        command.Parameters.Add("@Id", SqlDbType.Int).Value = product.Id;
                         command.Parameters.Add("@Name", SqlDbType.NVarChar, 200).Value = product.Name;
                         command.Parameters.Add("@Description", SqlDbType.NVarChar, -1).Value = product.Description;
                         command.Parameters.Add("@Code", SqlDbType.NVarChar, 50).Value = product.Code;
                         command.Parameters.Add(new SqlParameter("@Price", SqlDbType.Decimal) { Precision = 18, Scale = 2, Value = product.Price });
                         command.Parameters.Add("@Stock", SqlDbType.Int).Value = product.Stock;
-                        command.Parameters.Add("@State", SqlDbType.Bit).Value = product.State;
                         command.Parameters.Add("@UpdateDate", SqlDbType.DateTime2).Value = DateTime.Now;
+                        command.Parameters.Add("@UpdatedByUserId", SqlDbType.NVarChar, 50).Value = "456";
+
                         await command.ExecuteNonQueryAsync();
                     }
                 }
@@ -148,7 +148,7 @@ namespace dotnet_minimal_api_sample.Services
             }
         }
 
-        public async Task DeleteProduct(int Id)
+        public async Task DeleteProduct(string Code)
         {
             using (SqlConnection sqlConnection = connection())
             {
@@ -159,7 +159,9 @@ namespace dotnet_minimal_api_sample.Services
                     {
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.DeleteProduct";
-                        command.Parameters.Add("@Id", SqlDbType.Int).Value = Id;
+                        command.Parameters.Add("@Code", SqlDbType.NVarChar, 50).Value = Code;
+                        command.Parameters.Add("@DeletedDate", SqlDbType.DateTime2).Value = DateTime.Now;
+                        command.Parameters.Add("@DeletedByUserId", SqlDbType.NVarChar, 50).Value = "789";
                         await command.ExecuteNonQueryAsync();
                     }
                 }
