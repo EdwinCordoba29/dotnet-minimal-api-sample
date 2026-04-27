@@ -1,4 +1,6 @@
+using dotnet_minimal_api_sample;
 using dotnet_minimal_api_sample.Data;
+using dotnet_minimal_api_sample.DTO;
 using dotnet_minimal_api_sample.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +25,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/api/products", async (IServiceProducts serviceProducts) =>
 {
-    List<Product> listProducts = await serviceProducts.GetProducts();
+    var listProducts = (await serviceProducts.GetProducts()).Select(p=>p.ConvertDTO());
     return Results.Ok(listProducts);
 });
 
@@ -32,36 +34,50 @@ app.MapGet("/api/product/{code}", async (string code, IServiceProducts servicePr
     Product product = await serviceProducts.GetProduct(code);
     if (product is not null)
     {
-        return Results.Ok(product);
+        return Results.Ok(product.ConvertDTO());
     }
     return Results.NotFound("El producto no existe.");
 });
 
-app.MapPost("/api/product", async ([FromBody] Product product, IServiceProducts serviceProducts) =>
+app.MapPost("/api/product", async ([FromBody] ProductDTO productDTO, IServiceProducts serviceProducts) =>
 { 
-    if(product.Code == String.Empty)
+
+    if(productDTO.Code == String.Empty)
     {
         return Results.BadRequest("El código no puede estar vacío");
     }
+    Product product = null;
+    product = new Product
+    {
+        Name = productDTO.Name,
+        Description = productDTO.Description,
+        Code = productDTO.Code,
+        Price = productDTO.Price,
+        Stock = productDTO.Stock
+    };
     await serviceProducts.CreateProduct(product);
     return Results.Ok();
 }
 );
 
-app.MapPut("/api/product", async ([FromBody] Product product, IServiceProducts serviceProducts) =>
+app.MapPut("/api/product", async ([FromBody] ProductDTO productDTO, IServiceProducts serviceProducts) =>
 {
-    if(product.Code == String.Empty)
+    if(productDTO.Code == String.Empty)
     {
         return Results.BadRequest("El código no puede ser vacío");
     }
 
-    Product ExistingProduct = await serviceProducts.GetProduct(product.Code);
+    Product ExistingProduct = await serviceProducts.GetProduct(productDTO.Code);
 
     if(ExistingProduct != null)
     {
-        product.Id = ExistingProduct.Id;
-        await serviceProducts.UpdateProduct(product);
-        return Results.Ok(product);
+        ExistingProduct.Name = productDTO.Name;
+        ExistingProduct.Description = productDTO.Description;
+        ExistingProduct.Code = productDTO.Code;
+        ExistingProduct.Price = productDTO.Price;
+        ExistingProduct.Stock = productDTO.Stock;
+        await serviceProducts.UpdateProduct(ExistingProduct);
+        return Results.Ok(productDTO);
     }
     else
     {
@@ -81,7 +97,7 @@ app.MapDelete("/api/product", async ([FromBody] String Code, IServiceProducts se
 
     if (ExistingProduct != null)
     {
-        await serviceProducts.DeleteProduct(ExistingProduct.Id);
+        await serviceProducts.DeleteProduct(Code);
         return Results.Ok("Producto eliminado correctamente");
     }
     else

@@ -30,8 +30,12 @@ BEGIN
         Price DECIMAL(18,2) NOT NULL,
         Stock INT NOT NULL,
         State BIT NOT NULL,
+        CreatedByUserId NVARCHAR(50) NOT NULL, 
         CreationDate DATETIME2 NOT NULL,
-        UpdateDate DATETIME2 NULL
+        UpdatedByUserId NVARCHAR(50) NULL,
+        UpdateDate DATETIME2 NULL,
+        DeletedByUserId NVARCHAR(50) NULL,
+        DeletedDate DATETIME2 NULL
     );
     PRINT 'Tabla de productos creada correctamente.';
 END
