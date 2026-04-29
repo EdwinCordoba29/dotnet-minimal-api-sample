@@ -38,7 +38,7 @@ namespace dotnet_minimal_api_sample.Services
                         command.Parameters.Add("@Stock", SqlDbType.Int).Value = product.Stock;
                         command.Parameters.Add("@State", SqlDbType.Bit).Value = 1;
                         command.Parameters.Add("@CreationDate", SqlDbType.DateTime2).Value = DateTime.Now;
-                        command.Parameters.Add("@CreatedByUserId", SqlDbType.NVarChar, 50).Value = "123";
+                        command.Parameters.Add("@CreatedByUserId", SqlDbType.Int).Value = 1;
                         await command.ExecuteNonQueryAsync();
                     }
                 }
@@ -136,7 +136,7 @@ namespace dotnet_minimal_api_sample.Services
                         command.Parameters.Add(new SqlParameter("@Price", SqlDbType.Decimal) { Precision = 18, Scale = 2, Value = product.Price });
                         command.Parameters.Add("@Stock", SqlDbType.Int).Value = product.Stock;
                         command.Parameters.Add("@UpdateDate", SqlDbType.DateTime2).Value = DateTime.Now;
-                        command.Parameters.Add("@UpdatedByUserId", SqlDbType.NVarChar, 50).Value = "456";
+                        command.Parameters.Add("@UpdatedByUserId", SqlDbType.Int).Value = 1;
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -161,7 +161,7 @@ namespace dotnet_minimal_api_sample.Services
                         command.CommandText = "dbo.DeleteProduct";
                         command.Parameters.Add("@Code", SqlDbType.NVarChar, 50).Value = Code;
                         command.Parameters.Add("@DeletedDate", SqlDbType.DateTime2).Value = DateTime.Now;
-                        command.Parameters.Add("@DeletedByUserId", SqlDbType.NVarChar, 50).Value = "789";
+                        command.Parameters.Add("@DeletedByUserId", SqlDbType.Int).Value = 1;
                         await command.ExecuteNonQueryAsync();
                     }
                 }

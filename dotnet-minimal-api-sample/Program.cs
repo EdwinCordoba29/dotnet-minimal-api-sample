@@ -2,7 +2,12 @@ using dotnet_minimal_api_sample;
 using dotnet_minimal_api_sample.Data;
 using dotnet_minimal_api_sample.DTO;
 using dotnet_minimal_api_sample.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Linq.Expressions;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +18,49 @@ builder.Services.AddSwaggerGen();
 var ConnectionString = new ConnectionFactory(builder.Configuration.GetConnectionString("SQL"));
 builder.Services.AddSingleton(ConnectionString);
 builder.Services.AddScoped<IServiceProducts, ServiceProduct>();
+builder.Services.AddScoped<IServiceAuth, ServiceAuth>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:ClaveSecreta"]))
+    };
+});
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MinimalAPI", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Autorizacion JWT esquema. \r\n\r\n Escribe 'Bearer' [espacio] y escribe el token proporcionado. \r\n\r\nExample: \"Bearer 12345abcdef\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        { 
+            new OpenApiSecurityScheme
+            { 
+                Reference = new OpenApiReference
+                { 
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -27,7 +75,7 @@ app.MapGet("/api/products", async (IServiceProducts serviceProducts) =>
 {
     var listProducts = (await serviceProducts.GetProducts()).Select(p=>p.ConvertDTO());
     return Results.Ok(listProducts);
-});
+}).RequireAuthorization();
 
 app.MapGet("/api/product/{code}", async (string code, IServiceProducts serviceProducts) =>
 {
@@ -37,7 +85,7 @@ app.MapGet("/api/product/{code}", async (string code, IServiceProducts servicePr
         return Results.Ok(product.ConvertDTO());
     }
     return Results.NotFound("El producto no existe.");
-});
+}).RequireAuthorization();
 
 app.MapPost("/api/product", async ([FromBody] ProductDTO productDTO, IServiceProducts serviceProducts) =>
 { 
@@ -58,7 +106,7 @@ app.MapPost("/api/product", async ([FromBody] ProductDTO productDTO, IServicePro
     await serviceProducts.CreateProduct(product);
     return Results.Ok();
 }
-);
+).RequireAuthorization();
 
 app.MapPut("/api/product", async ([FromBody] ProductDTO productDTO, IServiceProducts serviceProducts) =>
 {
@@ -84,7 +132,7 @@ app.MapPut("/api/product", async ([FromBody] ProductDTO productDTO, IServiceProd
         return Results.BadRequest("El producto no existe.");
     }
 }
-);
+).RequireAuthorization();
 
 app.MapDelete("/api/product", async ([FromBody] String Code, IServiceProducts serviceProducts) =>
 {
@@ -105,7 +153,21 @@ app.MapDelete("/api/product", async ([FromBody] String Code, IServiceProducts se
         return Results.NotFound("El producto no existe.");
     }
 }
-);
+).RequireAuthorization();
+
+app.MapPost("/api/login", async ([FromBody] UserDTO userDTO, IServiceAuth serviceAuth) =>
+{
+    string token = await serviceAuth.Login(userDTO);
+    if (token == String.Empty)
+    { 
+        return Results.NotFound("Usuario no existe.");
+    }
+    else
+    {
+        return Results.Ok(token);
+    }
+}
+).AllowAnonymous();
 
 app.UseHttpsRedirection();
 
