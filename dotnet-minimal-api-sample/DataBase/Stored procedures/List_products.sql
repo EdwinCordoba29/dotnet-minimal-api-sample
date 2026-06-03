@@ -1,0 +1,13 @@
+﻿SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE dbo.ListProducts
+	@Code NVARCHAR(50) = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	SELECT Name, Description, Code, Price, Stock
+	FROM dbo.Products WHERE (@Code IS NULL OR Code = @Code) AND State = 1;
+END
+GO
